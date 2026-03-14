@@ -2199,7 +2199,7 @@ dashboard:
 - **验收标准**：backend=none 时不会改变排序；未知 backend 明确报错。
 - **测试方法**：`pytest -q tests/unit/test_reranker_factory.py`。
 
-### B6：Evaluator 抽象接口与工厂（先做自定义轻量指标）
+### [B6]：Evaluator 抽象接口与工厂（先做自定义轻量指标）
 - **目标**：定义 `BaseEvaluator`、`EvaluatorFactory`，实现最小 `CustomEvaluator`（例如 hit_rate/mrr）。
 - **修改文件**：
   - `src/libs/evaluator/base_evaluator.py`
