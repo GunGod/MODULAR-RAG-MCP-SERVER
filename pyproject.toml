@@ -1,0 +1,151 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "modular-rag-mcp-server"
+version = "0.1.0"
+description = "A modular RAG (Retrieval-Augmented Generation) system with MCP server integration"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+    {name = "Modular RAG MCP Server Project"}
+]
+keywords = ["rag", "mcp", "llm", "retrieval", "hybrid-search"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+dependencies = [
+    # MCP Protocol
+    "mcp>=0.9.0",
+
+    # Core dependencies
+    "pyyaml>=6.0",
+    "python-dotenv>=1.0.0",
+
+    # Data processing
+    "numpy>=1.24.0",
+    "pandas>=2.0.0",
+
+    # Vector store
+    "chromadb>=0.4.0",
+
+    # LLM / Embedding providers
+    "openai>=1.0.0",
+    "azure-identity>=1.0.0",
+    "sentence-transformers>=2.2.0",
+
+    # Document processing
+    "markitdown>=0.0.1",
+
+    # Text processing
+    "langchain-text-splitters>=0.0.1",
+    "rank-bm25>=0.2.2",
+
+    # Observability
+    "streamlit>=1.28.0",
+
+    # Utilities
+    "click>=8.0.0",
+    "tqdm>=4.65.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    # Testing
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+    "pytest-mock>=3.11.0",
+    "pytest-asyncio>=0.21.0",
+
+    # Code quality
+    "black>=23.0.0",
+    "ruff>=0.1.0",
+    "mypy>=1.5.0",
+
+    # Type stubs
+    "types-PyYAML",
+    "types-requests",
+]
+
+evaluation = [
+    "ragas>=0.1.0",
+    "deepeval>=0.2.0",
+]
+
+vision = [
+    # Additional vision dependencies (if needed)
+    "pillow>=10.0.0",
+]
+
+all = [
+    "modular-rag-mcp-server[dev,evaluation,vision]",
+]
+
+[project.scripts]
+# CLI entry points will be added here
+# ingest = "scripts.ingest:main"
+# query = "scripts.query:main"
+# evaluate = "scripts.evaluate:main"
+
+[project.urls]
+Homepage = "https://github.com/yourusername/modular-rag-mcp-server"
+Documentation = "https://github.com/yourusername/modular-rag-mcp-server/blob/main/README.md"
+Repository = "https://github.com/yourusername/modular-rag-mcp-server"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.black]
+line-length = 100
+target-version = ["py310", "py311", "py312"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+select = ["E", "F", "W", "I", "N", "B"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --strict-markers"
+markers = [
+    "unit: Unit tests",
+    "integration: Integration tests",
+    "e2e: End-to-end tests",
+    "slow: Slow-running tests",
+]
+
+[tool.coverage.run]
+source = ["src"]
+omit = [
+    "*/tests/*",
+    "*/test_*.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+]
