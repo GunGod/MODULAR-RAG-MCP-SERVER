@@ -277,7 +277,7 @@
 - **验收标准**：契约测试（contract test）约束输入输出 shape。
 - **测试方法**：`pytest -q tests/unit/test_vector_store_contract.py`。
 
-### B5：Reranker 抽象接口与工厂（含 None 回退）
+### [B5]：Reranker 抽象接口与工厂（含 None 回退）
 - **目标**：实现 `BaseReranker`、`RerankerFactory`，提供 `NoneReranker` 作为默认回退。
 - **修改文件**：
   - `src/libs/reranker/base_reranker.py`
