@@ -12,6 +12,21 @@ import sys
 from mcp import Server
 from mcp.server.stdio import stdio_server
 
+from src.core.settings import load_settings
+from src.observability.logger import get_logger
+
+# Load configuration at startup (fail-fast if config is invalid)
+try:
+    settings = load_settings()
+    logger = get_logger(__name__)
+    logger.info("Configuration loaded successfully")
+    logger.info(f"LLM provider: {settings.llm.provider}, model: {settings.llm.model}")
+    logger.info(f"Embedding provider: {settings.embedding.provider}, model: {settings.embedding.model}")
+    logger.info(f"Vector store backend: {settings.vector_store.backend}")
+except Exception as e:
+    print(f"Failed to load configuration: {e}", file=sys.stderr)
+    sys.exit(1)
+
 
 # Create MCP server instance
 server = Server("modular-rag-mcp-server")
@@ -133,7 +148,9 @@ if __name__ == "__main__":
         import asyncio
         asyncio.run(main())
     except KeyboardInterrupt:
+        logger.info("Server shutdown requested")
         sys.exit(0)
     except Exception as e:
+        logger.error(f"Server error: {e}")
         print(f"Server error: {e}", file=sys.stderr)
         sys.exit(1)

@@ -1,0 +1,111 @@
+# Modular RAG MCP Server Configuration
+#
+# This file contains all configuration settings for the RAG system.
+# See DEV_SPEC.md section 5.5 for detailed explanations of each section.
+
+# =============================================================================
+# LLM Configuration
+# =============================================================================
+llm:
+  # Provider: azure | openai | ollama | deepseek
+  provider: openai
+  model: gpt-4o
+
+  # Azure-specific (only required if provider=azure)
+  # azure_endpoint: "https://your-resource.openai.azure.com"
+  # api_key: "${AZURE_API_KEY}"  # Supports environment variable expansion
+
+  # Optional: Direct API key (for non-Azure providers)
+  # api_key: "${OPENAI_API_KEY}"
+
+  # Generation parameters
+  temperature: 0.7
+  max_tokens: 2048
+
+
+# =============================================================================
+# Embedding Configuration
+# =============================================================================
+embedding:
+  # Provider: openai | azure | ollama
+  provider: openai
+  model: text-embedding-3-small
+
+  # Optional: API key (if not using default)
+  # api_key: "${OPENAI_API_KEY}"
+
+  # Batch processing
+  batch_size: 32
+  dimension: 1536  # Default for text-embedding-3-small
+
+
+# =============================================================================
+# Vector Store Configuration
+# =============================================================================
+vector_store:
+  # Backend: chroma | qdrant | pinecone
+  backend: chroma
+  persist_path: ./data/db/chroma
+  collection_name: default
+
+
+# =============================================================================
+# Retrieval Configuration
+# =============================================================================
+retrieval:
+  # Sparse backend: bm25 | elasticsearch
+  sparse_backend: bm25
+
+  # Fusion algorithm: rrf | weighted_sum
+  fusion_algorithm: rrf
+
+  # Top-K settings
+  top_k_dense: 20
+  top_k_sparse: 20
+  top_k_final: 10
+
+
+# =============================================================================
+# Reranking Configuration
+# =============================================================================
+rerank:
+  # Backend: none | cross_encoder | llm
+  backend: none
+
+  # Model (required if backend=cross_encoder)
+  # model: cross-encoder/ms-marco-MiniLM-L-6-v2
+
+  # Top-M candidates to rerank (before final top_k)
+  top_m: 30
+
+  # Timeout for reranking (seconds)
+  timeout_seconds: 10
+
+
+# =============================================================================
+# Evaluation Configuration
+# =============================================================================
+evaluation:
+  # Evaluation backends: ragas | custom
+  backends: []
+  golden_test_set: ./tests/fixtures/golden_test_set.json
+
+
+# =============================================================================
+# Observability Configuration
+# =============================================================================
+observability:
+  enabled: true
+  log_file: ./logs/traces.jsonl
+  log_level: INFO  # DEBUG | INFO | WARNING | ERROR
+
+
+# =============================================================================
+# Dashboard Configuration
+# =============================================================================
+dashboard:
+  enabled: true
+  port: 8501
+  traces_dir: ./logs
+  auto_refresh: true
+  refresh_interval: 5  # seconds
