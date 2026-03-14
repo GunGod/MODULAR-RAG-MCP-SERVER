@@ -2163,7 +2163,7 @@ dashboard:
 - **验收标准**：Fake embedding 返回稳定向量，工厂按 provider 分流。
 - **测试方法**：`pytest -q tests/unit/test_embedding_factory.py`。
 
-### B3：Splitter 抽象接口与工厂
+### [B3]：Splitter 抽象接口与工厂
 - **目标**：定义 `BaseSplitter` 与 `SplitterFactory`，支持不同切分策略（Recursive/Semantic/Fixed）。
 - **修改文件**：
   - `src/libs/splitter/base_splitter.py`
