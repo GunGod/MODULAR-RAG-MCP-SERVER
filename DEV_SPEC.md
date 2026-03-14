@@ -2175,7 +2175,7 @@ dashboard:
 - **验收标准**：Factory 能根据配置返回不同类型的 Splitter 实例（测试中可用 Fake 实现）。
 - **测试方法**：`pytest -q tests/unit/test_splitter_factory.py`。
 
-### B4：VectorStore 抽象接口与工厂（先定义契约）
+### [B4]：VectorStore 抽象接口与工厂（先定义契约）
 - **目标**：定义 `BaseVectorStore` 与 `VectorStoreFactory`，先不接真实 DB。
 - **修改文件**：
   - `src/libs/vector_store/base_vector_store.py`
