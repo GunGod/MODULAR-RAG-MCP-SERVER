@@ -1968,7 +1968,7 @@ dashboard:
 | B7.1 | OpenAI-Compatible LLM 实现 | [x] | 2026-03-17 | 已完成 OpenAI/Azure/DeepSeek LLM 实现、LLMFactory 集成、16个测试用例全部通过 |
 | B7.2 | Ollama LLM 实现 | [x] | 2026-03-17 | 已完成 OllamaLLM 实现、支持 OpenAI 兼容和 legacy API、错误信息脱敏、12个测试用例全部通过 |
 | B7.3 | OpenAI & Azure Embedding 实现 | [x] | 2026-03-17 | 已完成 OpenAI/Azure Embedding 实现、Azure 复用 OpenAI 逻辑、支持批量处理、15个测试用例全部通过 |
-| B7.4 | Ollama Embedding 实现 | [ ] | | |
+| B7.4 | Ollama Embedding 实现 | [x] | 2026-03-17 | 已完成 OllamaEmbedding 实现、支持本地模型（nomic-embed-text等）、双端点支持、帮助性错误信息、12个测试用例全部通过 |
 | B7.5 | Recursive Splitter 默认实现 | [ ] | | |
 | B7.6 | ChromaStore 默认实现 | [ ] | | |
 | B7.7 | LLM Reranker 实现 | [ ] | | |

@@ -15,6 +15,7 @@ from src.libs.embedding.base_embedding import BaseEmbedding, EmbeddingResult
 from src.libs.embedding.fake_embedding import FakeEmbedding
 from src.libs.embedding.openai_embedding import OpenAIEmbedding
 from src.libs.embedding.azure_embedding import AzureEmbedding
+from src.libs.embedding.ollama_embedding import OllamaEmbedding
 from src.observability.logger import get_logger
 
 logger = get_logger(__name__)
@@ -40,6 +41,7 @@ class EmbeddingFactory:
         "fake": FakeEmbedding,
         "openai": OpenAIEmbedding,
         "azure": AzureEmbedding,
+        "ollama": OllamaEmbedding,
         # Additional providers will be registered in B7.x tasks
     }
 
