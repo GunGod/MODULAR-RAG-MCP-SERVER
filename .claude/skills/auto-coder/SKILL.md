@@ -195,7 +195,7 @@ Round 3 still failing → ❌ STOP, show failure report to user
 
     ✅ **完成标识：** 看到 `synced N chapters` 输出
 
-5.3. **Show detailed summary & ask** (必须执行！不要自己决定commit/skip/next)
+5.3. **Show detailed summary & generate documentation** (必须执行！不要自己决定commit/skip/next)
 
 > **⚠️ 必须提供详细的任务解读，帮助开发者理解完成的内容**
 >
@@ -213,7 +213,32 @@ Round 3 still failing → ❌ STOP, show failure report to user
 > - 说明代码的作用，而不仅仅是语法
 > - 用类比或实例帮助理解
 
-**Summary Template:**
+5.3.1. **Generate task summary markdown file** (新增步骤)
+
+> **⚠️ 每次任务完成后，必须生成任务总结文档**
+>
+> **目的：** 持久化任务完成记录，便于后续查阅和文档生成
+>
+> **要求：**
+> - 文件名格式：`[任务编号]_[任务名称]_实现总结.md`（如：B7.2_Ollama_LLM_实现总结.md）
+> - 存放位置：`docs/task-completion-summaries/`
+> - 如果目录不存在，自动创建
+>
+> **文档内容应包含：**
+> 1. **任务概述**：任务编号、名称、目标、验收标准
+> 2. **创建的文件**：详细列出所有新增/修改的文件及其作用
+> 3. **关键设计解读**：2-3个核心设计问题的解释（为什么这样做）
+> 4. **测试验证**：测试结果和验收标准验证
+> 5. **任务完成度**：满足任务要求和验收标准的清单
+> 6. **项目进度**：更新后的进度统计
+> 7. **使用示例**：可选，提供使用代码片段
+> 8. **技术亮点**：总结本次实现的技术要点
+>
+> **✅ 完成标识：** md 文件已创建到 `docs/task-completion-summaries/` 目录
+
+5.3.2. **Show summary and ask for user decision**
+
+**Summary Template (for display):**
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -263,6 +288,8 @@ Round 3 still failing → ❌ STOP, show failure report to user
 - [列出各阶段的进度]
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+**任务总结文档已生成：** docs/task-completion-summaries/[任务编号]_[任务名称]_实现总结.md
 
 Commit: feat([模块名]): [任务编号] [简短描述]
 

@@ -18,6 +18,7 @@ from src.libs.llm.openai_llm import OpenAILLM
 from src.libs.llm.azure_llm import AzureLLM
 from src.libs.llm.deepseek_llm import DeepSeekLLM
 from src.libs.llm.glm_llm import GLMLLM
+from src.libs.llm.ollama_llm import OllamaLLM
 from src.observability.logger import get_logger
 
 logger = get_logger(__name__)
@@ -46,6 +47,7 @@ class LLMFactory:
         "azure": AzureLLM,
         "deepseek": DeepSeekLLM,
         "glm": GLMLLM,
+        "ollama": OllamaLLM,
     }
 
     @classmethod

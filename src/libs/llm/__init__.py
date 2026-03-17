@@ -19,6 +19,7 @@ from src.libs.llm.openai_llm import OpenAILLM
 from src.libs.llm.azure_llm import AzureLLM
 from src.libs.llm.deepseek_llm import DeepSeekLLM
 from src.libs.llm.glm_llm import GLMLLM
+from src.libs.llm.ollama_llm import OllamaLLM
 
 __all__ = [
     # Base interfaces
@@ -33,4 +34,5 @@ __all__ = [
     "AzureLLM",
     "DeepSeekLLM",
     "GLMLLM",
+    "OllamaLLM",
 ]
