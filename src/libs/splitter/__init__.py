@@ -9,6 +9,7 @@ License: MIT
 """
 
 from src.libs.splitter.base_splitter import BaseSplitter
+from src.libs.splitter.recursive_splitter import RecursiveSplitter
 from src.libs.splitter.splitter_factory import SplitterFactory
 
-__all__ = ["BaseSplitter", "SplitterFactory"]
+__all__ = ["BaseSplitter", "SplitterFactory", "RecursiveSplitter"]

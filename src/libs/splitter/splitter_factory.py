@@ -13,6 +13,7 @@ from typing import List
 from src.core.settings import Settings
 from src.libs.splitter.base_splitter import BaseSplitter
 from src.libs.splitter.fake_splitter import FakeSplitter
+from src.libs.splitter.recursive_splitter import RecursiveSplitter
 from src.observability.logger import get_logger
 
 logger = get_logger(__name__)
@@ -36,7 +37,8 @@ class SplitterFactory:
     # Registry of available providers
     _providers = {
         "fake": FakeSplitter,
-        # Additional providers will be registered in B7.5 tasks
+        "recursive": RecursiveSplitter,
+        # Additional providers: semantic, fixed (to be implemented)
     }
 
     @classmethod
