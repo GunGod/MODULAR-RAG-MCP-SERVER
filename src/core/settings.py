@@ -42,6 +42,8 @@ class EmbeddingConfig:
     api_key: Optional[str] = None
     batch_size: int = 32
     dimension: int = 1536  # Default for OpenAI text-embedding-3-small
+    azure_endpoint: Optional[str] = None  # For Azure OpenAI
+    api_version: Optional[str] = None  # For Azure OpenAI
 
 
 @dataclass

@@ -13,6 +13,8 @@ from typing import List
 from src.core.settings import EmbeddingConfig, Settings
 from src.libs.embedding.base_embedding import BaseEmbedding, EmbeddingResult
 from src.libs.embedding.fake_embedding import FakeEmbedding
+from src.libs.embedding.openai_embedding import OpenAIEmbedding
+from src.libs.embedding.azure_embedding import AzureEmbedding
 from src.observability.logger import get_logger
 
 logger = get_logger(__name__)
@@ -36,6 +38,8 @@ class EmbeddingFactory:
     # Registry of available providers
     _providers = {
         "fake": FakeEmbedding,
+        "openai": OpenAIEmbedding,
+        "azure": AzureEmbedding,
         # Additional providers will be registered in B7.x tasks
     }
 
@@ -109,6 +113,13 @@ class EmbeddingFactory:
             "api_key": config.api_key,
             "batch_size": config.batch_size,
         }
+
+        # Add provider-specific config for Azure
+        if config.provider == "azure":
+            if config.azure_endpoint:
+                provider_kwargs["azure_endpoint"] = config.azure_endpoint
+            if config.api_version:
+                provider_kwargs["api_version"] = config.api_version
 
         # Create and return instance
         return provider_class(**provider_kwargs)
