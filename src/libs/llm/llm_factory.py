@@ -14,6 +14,10 @@ from typing import Optional
 from src.core.settings import LLMConfig, Settings
 from src.libs.llm.base_llm import BaseLLM
 from src.libs.llm.fake_llm import FakeLLM  # For testing/fallback
+from src.libs.llm.openai_llm import OpenAILLM
+from src.libs.llm.azure_llm import AzureLLM
+from src.libs.llm.deepseek_llm import DeepSeekLLM
+from src.libs.llm.glm_llm import GLMLLM
 from src.observability.logger import get_logger
 
 logger = get_logger(__name__)
@@ -38,7 +42,10 @@ class LLMFactory:
     # Registry of available providers
     _providers = {
         "fake": FakeLLM,
-        # Additional providers will be registered in B7.x tasks
+        "openai": OpenAILLM,
+        "azure": AzureLLM,
+        "deepseek": DeepSeekLLM,
+        "glm": GLMLLM,
     }
 
     @classmethod
@@ -112,8 +119,11 @@ class LLMFactory:
         }
 
         # Add provider-specific config
-        if config.provider == "azure" and config.azure_endpoint:
-            provider_kwargs["azure_endpoint"] = config.azure_endpoint
+        if config.provider == "azure":
+            if config.azure_endpoint:
+                provider_kwargs["azure_endpoint"] = config.azure_endpoint
+            if config.api_version:
+                provider_kwargs["api_version"] = config.api_version
 
         # Create and return instance
         return provider_class(**provider_kwargs)

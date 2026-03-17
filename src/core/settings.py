@@ -29,6 +29,7 @@ class LLMConfig:
     model: str
     azure_endpoint: Optional[str] = None
     api_key: Optional[str] = None
+    api_version: Optional[str] = None  # For Azure OpenAI
     temperature: float = 0.7
     max_tokens: int = 2048
 
