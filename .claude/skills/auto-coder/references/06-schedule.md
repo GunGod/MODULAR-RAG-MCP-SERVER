@@ -64,7 +64,7 @@
 | B7.7 | LLM Reranker 实现 | [x] | 2026-03-21 | 已完成 LLMReranker 实现、基于 LLM 的智能重排序、Prompt 模板加载、JSON 响应解析（支持 Markdown）、降级机制、14个测试用例全部通过 |
 | B7.8 | Cross-Encoder Reranker 实现 | [x] | 2026-03-21 | 已完成 CrossEncoderReranker 实现、基于 Cross-Encoder 模型的精排重排序、可插拔 scorer 函数、超时保护、降级机制、14个测试用例全部通过 |
 | B8 | Vision LLM 抽象接口与工厂集成 | [x] | 2026-03-21 | 已完成 BaseVisionLLM 抽象接口、VisionMessage/VisionResponse/ImageContent 数据类、VisionLLMConfig 配置、LLM 工厂模式、24个测试用例全部通过 |
-| B9 | Azure Vision LLM 实现 | [ ] | | |
+| B9 | Azure Vision LLM 实现 | [x] | 2026-03-21 | 已完成 AzureVisionLLM 实现、Azure OpenAI Vision API 调用、支持 URL/base64/PATH 三种图片输入、自动图片压缩、29个测试用例全部通过 |
 
 #### 阶段 C：Ingestion Pipeline MVP
 
