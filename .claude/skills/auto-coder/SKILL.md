@@ -291,9 +291,38 @@ Round 3 still failing → ❌ STOP, show failure report to user
 
 **任务总结文档已生成：** docs/task-completion-summaries/[任务编号]_[任务名称]_实现总结.md
 
-Commit: feat([模块名]): [任务编号] [简短描述]
+**Commit 信息格式（使用中文）：**
 
-"commit" → git add + commit
+```
+feat([模块名]): [任务编号] [中文简短描述]
+
+使用 [提供商/技术] 实现 [功能特性]，支持 [关键能力]。
+
+功能特性：
+- [核心功能1]
+- [核心功能2]
+- [核心功能3]
+
+技术亮点：
+- [技术点1]
+- [技术点2]
+
+测试覆盖：
+- [测试数量] 个测试用例全部通过
+- 覆盖 [主要测试场景]
+
+新增文件：
+- [文件1]
+- [文件2]
+
+修改文件：
+- [文件1]
+- [文件2]
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+```
+
+"commit" → git add + commit（使用上述中文提交信息格式）
 "skip"   → end
 "next"   → commit + start [下一个任务编号]
 ```
