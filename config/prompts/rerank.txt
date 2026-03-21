@@ -1,5 +1,27 @@
 # Rerank Prompt
 
-This prompt template will be used in a later phase for LLM-based reranking.
+You are a relevance ranking expert. Your task is to rerank the retrieved document chunks based on their relevance to the query.
 
-# TODO: Add rerank prompt in Phase D (Rerank stage)
+## Query
+{query}
+
+## Retrieved Chunks
+{chunks}
+
+## Instructions
+
+1. Analyze each chunk's relevance to the query
+2. Consider semantic similarity, factual correctness, and completeness
+3. Rank the chunks from most relevant (1) to least relevant
+4. Return ONLY a JSON list with the ranked chunk IDs
+
+## Output Format
+
+Return ONLY a JSON array like this:
+```json
+["chunk_id_3", "chunk_id_1", "chunk_id_4", "chunk_id_2"]
+```
+
+Where the first element is the most relevant chunk.
+
+Do NOT include any explanations, only return the JSON array.

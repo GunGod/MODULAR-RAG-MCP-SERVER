@@ -1971,7 +1971,7 @@ dashboard:
 | B7.4 | Ollama Embedding 实现 | [x] | 2026-03-17 | 已完成 OllamaEmbedding 实现、支持本地模型（nomic-embed-text等）、双端点支持、帮助性错误信息、12个测试用例全部通过 |
 | B7.5 | Recursive Splitter 默认实现 | [x] | 2026-03-18 | 已完成 RecursiveSplitter 实现、纯 Python 递归切分策略、保留 Markdown 结构、24个测试用例全部通过 |
 | B7.6 | ChromaStore 默认实现 | [x] | 2026-03-21 | 已完成 ChromaStore 实现、ChromaDB 后端集成、本地持久化、13个集成测试用例全部通过 |
-| B7.7 | LLM Reranker 实现 | [ ] | | |
+| B7.7 | LLM Reranker 实现 | [x] | 2026-03-21 | 已完成 LLMReranker 实现、基于 LLM 的智能重排序、Prompt 模板加载、JSON 响应解析（支持 Markdown）、降级机制、14个测试用例全部通过 |
 | B7.8 | Cross-Encoder Reranker 实现 | [ ] | | |
 | B8 | Vision LLM 抽象接口与工厂集成 | [ ] | | |
 | B9 | Azure Vision LLM 实现 | [ ] | | |

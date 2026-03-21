@@ -13,6 +13,7 @@ from src.libs.reranker.base_reranker import (
     RerankCandidate,
     RerankResult,
 )
+from src.libs.reranker.llm_reranker import LLMReranker
 from src.libs.reranker.reranker_factory import RerankerFactory
 
 __all__ = [
@@ -20,4 +21,5 @@ __all__ = [
     "RerankCandidate",
     "RerankResult",
     "RerankerFactory",
+    "LLMReranker",
 ]
