@@ -1980,7 +1980,7 @@ dashboard:
 
 | 任务编号 | 任务名称 | 状态 | 完成日期 | 备注 |
 |---------|---------|------|---------|------|
-| C1 | 定义核心数据类型/契约（Document/Chunk/ChunkRecord） | [ ] | | |
+| C1 | 定义核心数据类型/契约（Document/Chunk/ChunkRecord） | [x] | 2026-03-21 | 已完成 Document/Chunk/ChunkRecord/ImageMetadata 数据类、序列化支持、metadata.images 规范、图片占位符 [IMAGE: {id}]、46个测试用例全部通过 |
 | C2 | 文件完整性检查（SHA256） | [ ] | | |
 | C3 | Loader 抽象基类与 PDF Loader | [ ] | | |
 | C4 | Splitter 集成（调用 Libs） | [ ] | | |
