@@ -14,6 +14,7 @@ from src.core.settings import Settings
 from src.libs.reranker.base_reranker import BaseReranker
 from src.libs.reranker.none_reranker import NoneReranker
 from src.libs.reranker.llm_reranker import LLMReranker
+from src.libs.reranker.cross_encoder_reranker import CrossEncoderReranker
 from src.observability.logger import get_logger
 
 logger = get_logger(__name__)
@@ -37,7 +38,7 @@ class RerankerFactory:
     _providers = {
         "none": NoneReranker,
         "llm": LLMReranker,
-        # Additional providers: cross_encoder (to be implemented in B7.8)
+        "cross_encoder": CrossEncoderReranker,
     }
 
     @classmethod

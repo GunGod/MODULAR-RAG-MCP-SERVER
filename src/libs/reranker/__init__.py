@@ -14,6 +14,7 @@ from src.libs.reranker.base_reranker import (
     RerankResult,
 )
 from src.libs.reranker.llm_reranker import LLMReranker
+from src.libs.reranker.cross_encoder_reranker import CrossEncoderReranker
 from src.libs.reranker.reranker_factory import RerankerFactory
 
 __all__ = [
@@ -22,4 +23,5 @@ __all__ = [
     "RerankResult",
     "RerankerFactory",
     "LLMReranker",
+    "CrossEncoderReranker",
 ]

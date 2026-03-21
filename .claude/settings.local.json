@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(source .venv/Scripts/activate)",
+      "Bash(python -m pytest tests/unit/test_cross_encoder_reranker.py -v)"
+    ]
+  }
+}
