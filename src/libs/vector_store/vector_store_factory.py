@@ -13,6 +13,7 @@ from typing import List
 from src.core.settings import Settings
 from src.libs.vector_store.base_vector_store import BaseVectorStore
 from src.libs.vector_store.fake_vector_store import FakeVectorStore
+from src.libs.vector_store.chroma_store import ChromaStore
 from src.observability.logger import get_logger
 
 logger = get_logger(__name__)
@@ -36,7 +37,8 @@ class VectorStoreFactory:
     # Registry of available providers
     _providers = {
         "fake": FakeVectorStore,
-        # Additional providers will be registered in C1 task
+        "chroma": ChromaStore,
+        # Additional providers: qdrant, pinecone (future implementations)
     }
 
     @classmethod
