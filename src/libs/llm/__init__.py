@@ -7,12 +7,20 @@ This package provides a pluggable LLM layer with support for multiple providers:
 - DeepSeek (deepseek-chat, deepseek-coder)
 - Ollama (local models, coming in B7.2)
 - Fake (for testing)
+- Vision LLM (multimodal support for image understanding)
 
 Author: Modular RAG MCP Server Project
 License: MIT
 """
 
 from src.libs.llm.base_llm import BaseLLM, LLMResponse, Message
+from src.libs.llm.base_vision_llm import (
+    BaseVisionLLM,
+    VisionResponse,
+    VisionMessage,
+    ImageContent,
+    ImageType,
+)
 from src.libs.llm.fake_llm import FakeLLM
 from src.libs.llm.llm_factory import LLMFactory
 from src.libs.llm.openai_llm import OpenAILLM
@@ -26,6 +34,12 @@ __all__ = [
     "BaseLLM",
     "LLMResponse",
     "Message",
+    # Vision LLM interfaces
+    "BaseVisionLLM",
+    "VisionResponse",
+    "VisionMessage",
+    "ImageContent",
+    "ImageType",
     # Factory
     "LLMFactory",
     # Providers

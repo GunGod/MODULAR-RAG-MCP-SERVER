@@ -35,6 +35,19 @@ class LLMConfig:
 
 
 @dataclass
+class VisionLLMConfig:
+    """Vision LLM provider configuration for multimodal image understanding."""
+    provider: str  # azure | dashscope | openai
+    model: str
+    api_key: Optional[str] = None
+    azure_endpoint: Optional[str] = None  # For Azure OpenAI Vision
+    api_version: Optional[str] = None  # For Azure OpenAI
+    temperature: float = 0.7
+    max_tokens: int = 2048
+    timeout_seconds: int = 30  # Timeout for image processing
+
+
+@dataclass
 class EmbeddingConfig:
     """Embedding provider configuration."""
     provider: str  # openai | azure | ollama
@@ -115,6 +128,7 @@ class Settings:
     vector_store: VectorStoreConfig
     retrieval: RetrievalConfig
     rerank: RerankConfig
+    vision_llm: VisionLLMConfig
     evaluation: EvaluationConfig
     observability: ObservabilityConfig
     dashboard: DashboardConfig
@@ -215,6 +229,7 @@ def load_settings(path: str = "config/settings.yaml") -> Settings:
         vector_store_config = _parse_vector_store_config(config_data.get("vector_store", {}))
         retrieval_config = _parse_retrieval_config(config_data.get("retrieval", {}))
         rerank_config = _parse_rerank_config(config_data.get("rerank", {}))
+        vision_llm_config = _parse_vision_llm_config(config_data.get("vision_llm", {}))
         evaluation_config = _parse_evaluation_config(config_data.get("evaluation", {}))
         observability_config = _parse_observability_config(config_data.get("observability", {}))
         dashboard_config = _parse_dashboard_config(config_data.get("dashboard", {}))
@@ -225,6 +240,7 @@ def load_settings(path: str = "config/settings.yaml") -> Settings:
             vector_store=vector_store_config,
             retrieval=retrieval_config,
             rerank=rerank_config,
+            vision_llm=vision_llm_config,
             evaluation=evaluation_config,
             observability=observability_config,
             dashboard=dashboard_config,
@@ -253,6 +269,20 @@ def _parse_llm_config(data: dict[str, Any]) -> LLMConfig:
         api_key=data.get("api_key"),
         temperature=data.get("temperature", 0.7),
         max_tokens=data.get("max_tokens", 2048),
+    )
+
+
+def _parse_vision_llm_config(data: dict[str, Any]) -> VisionLLMConfig:
+    """Parse Vision LLM configuration section."""
+    return VisionLLMConfig(
+        provider=data.get("provider", "azure"),
+        model=data.get("model", "gpt-4o"),
+        api_key=data.get("api_key"),
+        azure_endpoint=data.get("azure_endpoint"),
+        api_version=data.get("api_version"),
+        temperature=data.get("temperature", 0.7),
+        max_tokens=data.get("max_tokens", 2048),
+        timeout_seconds=data.get("timeout_seconds", 30),
     )
 
 

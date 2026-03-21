@@ -83,6 +83,27 @@ rerank:
 
 
 # =============================================================================
+# Vision LLM Configuration (Image Captioning)
+# =============================================================================
+vision_llm:
+  # Provider: azure | dashscope | openai
+  provider: azure
+  model: gpt-4o
+
+  # Azure-specific (only required if provider=azure)
+  # azure_endpoint: "https://your-resource.openai.azure.com"
+  # api_key: "${AZURE_API_KEY}"
+  # api_version: "2024-02-15-preview"
+
+  # Generation parameters
+  temperature: 0.7
+  max_tokens: 2048
+
+  # Timeout for image processing (seconds)
+  timeout_seconds: 30
+
+
+# =============================================================================
 # Evaluation Configuration
 # =============================================================================
 evaluation:
