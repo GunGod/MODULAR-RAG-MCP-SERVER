@@ -1,9 +1,8 @@
 """
-Unit tests for DocumentChunker.
+Unit tests for DocumentChunker with TextChunk support.
 
-These tests verify the adapter layer behavior that converts Document
-objects to List[Chunk] objects with proper metadata inheritance,
-ID generation, and image reference distribution.
+These tests verify the adapter layer behavior that now uses TextChunk
+with precise position information from libs.splitter.
 
 Test Coverage:
 - Factory creation and initialization
@@ -13,6 +12,7 @@ Test Coverage:
 - chunk_index field addition
 - source_ref establishment
 - Image reference distribution
+- Precise offset tracking
 - Error handling
 
 Author: Modular RAG MCP Server Project
@@ -20,12 +20,12 @@ License: MIT
 """
 
 import pytest
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 from src.core.types import Chunk, Document, ImageMetadata
 from src.ingestion.chunking import DocumentChunker
 from src.libs.splitter.fake_splitter import FakeSplitter
-from src.libs.splitter.base_splitter import BaseSplitter
+from src.libs.splitter.base_splitter import BaseSplitter, TextChunk
 
 
 class TestDocumentChunkerInitialization:
@@ -412,6 +412,70 @@ class TestSourceReference:
             assert chunk.source_ref is not None
 
 
+class TestPreciseOffsets:
+    """Tests for precise offset tracking using TextChunk."""
+
+    def test_offsets_are_precise(self):
+        """Test that offsets match exact positions in original document."""
+        splitter = FakeSplitter(chunk_size=1000, chunk_overlap=0)
+        chunker = DocumentChunker(splitter)
+
+        # Create document with known structure (3000 chars)
+        document = Document(
+            id="offset_test",
+            text="A" * 1000 + "B" * 1000 + "C" * 1000,
+            metadata={"source_path": "/path/to/test.txt"}
+        )
+
+        chunks = chunker.chunk_document(document)
+
+        # Verify we get 3 chunks with precise offsets
+        assert len(chunks) == 3
+        assert chunks[0].start_offset == 0
+        assert chunks[0].end_offset == 1000
+        assert chunks[1].start_offset == 1000
+        assert chunks[1].end_offset == 2000
+        assert chunks[2].start_offset == 2000
+        assert chunks[2].end_offset == 3000
+
+    def test_offsets_match_content(self):
+        """Test that offsets correctly point to the content in original text."""
+        splitter = FakeSplitter(chunk_size=500, chunk_overlap=0)
+        chunker = DocumentChunker(splitter)
+
+        document_text = "START" + "MIDDLE" * 100 + "END"
+        document = Document(
+            id="content_test",
+            text=document_text,
+            metadata={"source_path": "/path/to/test.txt"}
+        )
+
+        chunks = chunker.chunk_document(document)
+
+        # Verify each chunk's text matches the original document at its offsets
+        for chunk in chunks:
+            expected_text = document_text[chunk.start_offset:chunk.end_offset]
+            assert chunk.text == expected_text
+
+    def test_offsets_increasing(self):
+        """Test that offsets are monotonically increasing."""
+        splitter = FakeSplitter(chunk_size=300, chunk_overlap=0)
+        chunker = DocumentChunker(splitter)
+
+        document = Document(
+            id="increasing_test",
+            text="X" * 1500,
+            metadata={"source_path": "/path/to/test.txt"}
+        )
+
+        chunks = chunker.chunk_document(document)
+
+        # Verify offsets are strictly increasing
+        for i in range(len(chunks) - 1):
+            assert chunks[i].end_offset == chunks[i + 1].start_offset
+            assert chunks[i].start_offset < chunks[i + 1].start_offset
+
+
 class TestErrorHandling:
     """Tests for error handling and edge cases."""
 
@@ -420,6 +484,7 @@ class TestErrorHandling:
         # Create a mock splitter that raises an error
         mock_splitter = Mock(spec=BaseSplitter)
         mock_splitter.split_text.side_effect = RuntimeError("Splitter failed")
+        mock_splitter.provider_name = "mock"
 
         chunker = DocumentChunker(mock_splitter)
 
@@ -452,3 +517,40 @@ class TestErrorHandling:
             chunker.chunk_document(document)
 
         assert "no chunks" in str(exc_info.value).lower()
+
+
+class TestTextChunkIntegration:
+    """Tests for TextChunk integration with DocumentChunker."""
+
+    def test_textchunk_conversion(self):
+        """Test that TextChunk objects are properly converted to Chunk."""
+        # Create a mock splitter that returns TextChunk objects
+        mock_splitter = Mock(spec=BaseSplitter)
+        mock_splitter.provider_name = "mock"
+
+        # Create TextChunk objects with known positions
+        text_chunks = [
+            TextChunk(text="First chunk", start_offset=0, end_offset=11),
+            TextChunk(text="Second chunk", start_offset=11, end_offset=23),
+            TextChunk(text="Third chunk", start_offset=23, end_offset=34),
+        ]
+        mock_splitter.split_text.return_value = text_chunks
+
+        chunker = DocumentChunker(mock_splitter)
+
+        document = Document(
+            id="textchunk_test",
+            text="First chunkSecond chunkThird chunk",
+            metadata={"source_path": "/path/to/test.txt"}
+        )
+
+        chunks = chunker.chunk_document(document)
+
+        # Verify TextChunk positions are preserved
+        assert len(chunks) == 3
+        assert chunks[0].start_offset == 0
+        assert chunks[0].end_offset == 11
+        assert chunks[1].start_offset == 11
+        assert chunks[1].end_offset == 23
+        assert chunks[2].start_offset == 23
+        assert chunks[2].end_offset == 34

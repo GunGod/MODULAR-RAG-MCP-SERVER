@@ -11,7 +11,7 @@ License: MIT
 
 from typing import List, Optional
 
-from src.libs.splitter.base_splitter import BaseSplitter
+from src.libs.splitter.base_splitter import BaseSplitter, TextChunk
 from src.observability.logger import get_logger
 
 logger = get_logger(__name__)
@@ -42,7 +42,8 @@ class RecursiveSplitter(BaseSplitter):
         >>> text = "Hello world.\\n\\nThis is a test."
         >>> chunks = splitter.split_text(text)
         >>> print(len(chunks))  # Number of chunks
-        >>> print(len(chunks[0]))  # Size of first chunk
+        >>> print(chunks[0].text)  # Text content
+        >>> print(chunks[0].start_offset)  # Start position
     """
 
     # Default separators in order of preference (largest to smallest)
@@ -86,7 +87,7 @@ class RecursiveSplitter(BaseSplitter):
         self,
         text: str,
         **kwargs
-    ) -> List[str]:
+    ) -> List[TextChunk]:
         """
         Split text into chunks using recursive strategy.
 
@@ -98,7 +99,7 @@ class RecursiveSplitter(BaseSplitter):
             **kwargs: Additional parameters (currently unused)
 
         Returns:
-            List of text chunks
+            List of TextChunk objects with text and position information
 
         Raises:
             ValueError: If text is empty
@@ -109,6 +110,7 @@ class RecursiveSplitter(BaseSplitter):
             >>> text = "Hello world.\\n\\nThis is a test document."
             >>> chunks = splitter.split_text(text)
             >>> print(len(chunks))  # Number of chunks
+            >>> print(chunks[0].start_offset)  # Start position in original text
         """
         # Validate input
         if not text:
@@ -127,11 +129,11 @@ class RecursiveSplitter(BaseSplitter):
                 f"[{self.provider_name}] Text is shorter than chunk_size, "
                 f"returning as single chunk."
             )
-            return [text]
+            return [TextChunk(text=text, start_offset=0, end_offset=len(text))]
 
-        # Split text recursively
+        # Split text recursively with position tracking
         try:
-            chunks = self._split_recursive(text, 0)
+            chunks = self._split_recursive(text, 0, 0)
             logger.debug(
                 f"[{self.provider_name}] Split text into {len(chunks)} chunks"
             )
@@ -147,10 +149,11 @@ class RecursiveSplitter(BaseSplitter):
     def _split_recursive(
         self,
         text: str,
-        separator_index: int
-    ) -> List[str]:
+        separator_index: int,
+        base_offset: int
+    ) -> List[TextChunk]:
         """
-        Recursively split text using separators.
+        Recursively split text using separators with position tracking.
 
         This method tries to split the text using the current separator.
         If any resulting chunk is still too large, it recursively tries the next separator.
@@ -158,9 +161,10 @@ class RecursiveSplitter(BaseSplitter):
         Args:
             text: Text to split
             separator_index: Index in self.separators list to use
+            base_offset: Starting position of text in the original document
 
         Returns:
-            List of text chunks
+            List of TextChunk objects
 
         Algorithm:
         1. Split text by current separator
@@ -174,7 +178,7 @@ class RecursiveSplitter(BaseSplitter):
                 f"[{self.provider_name}] Exhausted all separators, "
                 f"splitting by character size."
             )
-            return self._split_by_size(text)
+            return self._split_by_size(text, base_offset)
 
         # Get current separator
         separator = self.separators[separator_index]
@@ -185,14 +189,15 @@ class RecursiveSplitter(BaseSplitter):
                 f"[{self.provider_name}] Empty separator encountered, "
                 f"splitting by character size."
             )
-            return self._split_by_size(text)
+            return self._split_by_size(text, base_offset)
 
         # Split text by current separator
         splits = text.split(separator)
 
         # Process each split
         chunks = []
-        current_chunk = ""
+        current_chunk_text = ""
+        current_start = base_offset
 
         for i, split in enumerate(splits):
             # Add separator back (except for last element)
@@ -202,50 +207,75 @@ class RecursiveSplitter(BaseSplitter):
                 split_with_sep = split
 
             # Check if adding this would exceed chunk_size
-            if len(current_chunk) + len(split_with_sep) <= self.chunk_size:
+            if len(current_chunk_text) + len(split_with_sep) <= self.chunk_size:
                 # Add to current chunk
-                current_chunk += split_with_sep
+                current_chunk_text += split_with_sep
             else:
                 # Current chunk is full, save it and start new chunk
-                if current_chunk:
-                    chunks.append(current_chunk)
+                if current_chunk_text:
+                    chunk = TextChunk(
+                        text=current_chunk_text,
+                        start_offset=current_start,
+                        end_offset=current_start + len(current_chunk_text)
+                    )
+                    chunks.append(chunk)
+                    current_start += len(current_chunk_text)
 
                 # Start new chunk
-                # Note: Overlap will be applied in post-processing (_apply_overlap)
-                current_chunk = split_with_sep
+                current_chunk_text = split_with_sep
 
                 # Check if new chunk already exceeds chunk_size
-                if len(current_chunk) > self.chunk_size:
+                if len(current_chunk_text) > self.chunk_size:
                     # New chunk is too large, decide how to handle it
-                    if self._should_split_further(current_chunk, separator_index):
+                    if self._should_split_further(current_chunk_text, separator_index):
                         # Intelligent splitting: try next separator
-                        sub_chunks = self._split_recursive(current_chunk, separator_index + 1)
+                        sub_chunks = self._split_recursive(
+                            current_chunk_text,
+                            separator_index + 1,
+                            current_start
+                        )
 
                         # Add all sub-chunks except the last one
                         if len(sub_chunks) > 1:
                             chunks.extend(sub_chunks[:-1])
 
                         # Last sub-chunk becomes current chunk for next iteration
-                        current_chunk = sub_chunks[-1]
+                        last_sub = sub_chunks[-1]
+                        current_chunk_text = last_sub.text
+                        current_start = last_sub.start_offset
                     else:
                         # Splitting wouldn't help, force split by size
-                        # This is the fallback when we can't split meaningfully
-                        size_chunks = self._split_by_size(current_chunk)
+                        size_chunks = self._split_by_size(
+                            current_chunk_text,
+                            current_start
+                        )
 
                         # Add all but the last size-based chunk
                         if len(size_chunks) > 1:
                             chunks.extend(size_chunks[:-1])
-                            current_chunk = size_chunks[-1]
+                            last_size = size_chunks[-1]
+                            current_chunk_text = last_size.text
+                            current_start = last_size.start_offset
                         else:
                             # Even size-based splitting produced only one chunk
                             # Accept it as-is (it will be slightly larger than chunk_size)
-                            chunks.append(current_chunk)
-                            current_chunk = ""
-                # Note: if chunk fits, current_chunk is already set above (line 215)
+                            chunk = TextChunk(
+                                text=current_chunk_text,
+                                start_offset=current_start,
+                                end_offset=current_start + len(current_chunk_text)
+                            )
+                            chunks.append(chunk)
+                            current_chunk_text = ""
+                            current_start += len(current_chunk_text)
 
         # Add the last chunk
-        if current_chunk:
-            chunks.append(current_chunk)
+        if current_chunk_text:
+            chunk = TextChunk(
+                text=current_chunk_text,
+                start_offset=current_start,
+                end_offset=current_start + len(current_chunk_text)
+            )
+            chunks.append(chunk)
 
         # Post-process: handle overlap between chunks
         if self.chunk_overlap > 0 and len(chunks) > 1:
@@ -253,7 +283,7 @@ class RecursiveSplitter(BaseSplitter):
 
         return chunks
 
-    def _split_by_size(self, text: str) -> List[str]:
+    def _split_by_size(self, text: str, base_offset: int) -> List[TextChunk]:
         """
         Split text by character size when all separators are exhausted.
 
@@ -262,31 +292,31 @@ class RecursiveSplitter(BaseSplitter):
 
         Args:
             text: Text to split
+            base_offset: Starting position in the original document
 
         Returns:
-            List of text chunks
+            List of TextChunk objects
         """
         chunks = []
         start = 0
         effective_chunk_size = self.chunk_size
 
         while start < len(text):
-            # Calculate end position (with overlap consideration)
-            if start > 0 and self.chunk_overlap > 0:
-                start = start - self.chunk_overlap
-
+            # Calculate end position
             end = start + effective_chunk_size
+            end = min(end, len(text))
 
             # Extract chunk
-            chunk = text[start:end]
+            chunk_text = text[start:end]
+            chunk = TextChunk(
+                text=chunk_text,
+                start_offset=base_offset + start,
+                end_offset=base_offset + end
+            )
             chunks.append(chunk)
 
-            # Move to next chunk (with overlap)
+            # Move to next chunk
             start = end
-
-            # Adjust for overlap in next iteration
-            if start >= len(text):
-                break
 
         logger.debug(
             f"[{self.provider_name}] Split by size into {len(chunks)} chunks"
@@ -294,7 +324,7 @@ class RecursiveSplitter(BaseSplitter):
 
         return chunks
 
-    def _apply_overlap(self, chunks: List[str]) -> List[str]:
+    def _apply_overlap(self, chunks: List[TextChunk]) -> List[TextChunk]:
         """
         Apply overlap between consecutive chunks.
 
@@ -302,10 +332,10 @@ class RecursiveSplitter(BaseSplitter):
         for better context preservation in retrieval.
 
         Args:
-            chunks: List of text chunks
+            chunks: List of TextChunk objects
 
         Returns:
-            List of text chunks with overlap applied
+            List of TextChunk objects with overlap applied
         """
         if len(chunks) <= 1:
             return chunks
@@ -319,10 +349,19 @@ class RecursiveSplitter(BaseSplitter):
             else:
                 # Add overlap from previous chunk
                 prev_chunk = chunks[i - 1]
-                overlap_text = prev_chunk[-self.chunk_overlap:]
+                overlap_text = prev_chunk.text[-self.chunk_overlap:]
 
                 # Combine overlap with current chunk
-                overlapped_chunk = overlap_text + chunk
+                overlapped_text = overlap_text + chunk.text
+
+                # Adjust start offset (overlap comes from previous chunk)
+                overlap_start_offset = prev_chunk.end_offset - self.chunk_overlap
+
+                overlapped_chunk = TextChunk(
+                    text=overlapped_text,
+                    start_offset=overlap_start_offset,
+                    end_offset=chunk.end_offset
+                )
                 overlapped_chunks.append(overlapped_chunk)
 
         return overlapped_chunks

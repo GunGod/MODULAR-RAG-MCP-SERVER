@@ -11,7 +11,7 @@ License: MIT
 
 from typing import List, Optional
 
-from src.libs.splitter.base_splitter import BaseSplitter
+from src.libs.splitter.base_splitter import BaseSplitter, TextChunk
 
 
 class FakeSplitter(BaseSplitter):
@@ -52,9 +52,9 @@ class FakeSplitter(BaseSplitter):
         self._total_texts_processed = 0
         self._total_chunks_generated = 0
 
-    def split_text(self, text: str, **kwargs) -> List[str]:
+    def split_text(self, text: str, **kwargs) -> List[TextChunk]:
         """
-        Split text into fixed-size chunks.
+        Split text into fixed-size chunks with precise positions.
 
         The splitting is performed at regular intervals of chunk_size characters.
         No semantic analysis or overlap is performed.
@@ -64,7 +64,7 @@ class FakeSplitter(BaseSplitter):
             **kwargs: Additional ignored parameters
 
         Returns:
-            List of text chunks
+            List of TextChunk objects with text and position information
 
         Raises:
             ValueError: If text is empty
@@ -75,15 +75,23 @@ class FakeSplitter(BaseSplitter):
         self._call_count += 1
         self._total_texts_processed += 1
 
-        # Simple fixed-size splitting
+        # Simple fixed-size splitting with precise positions
         chunks = []
         start = 0
         text_length = len(text)
 
         while start < text_length:
             end = min(start + self.chunk_size, text_length)
-            chunk = text[start:end]
+            chunk_text = text[start:end]
+
+            # Create TextChunk with precise positions
+            chunk = TextChunk(
+                text=chunk_text,
+                start_offset=start,
+                end_offset=end
+            )
             chunks.append(chunk)
+
             start = end
 
         self._total_chunks_generated += len(chunks)

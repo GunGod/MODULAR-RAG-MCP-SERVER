@@ -9,7 +9,59 @@ License: MIT
 """
 
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import List, Optional, Any
+
+
+@dataclass
+class TextChunk:
+    """
+    A text chunk with precise position information.
+
+    This dataclass wraps a text chunk along with its exact position
+    in the original document text. This enables accurate mapping between
+    chunks and their source locations.
+
+    Attributes:
+        text: The text content of the chunk
+        start_offset: Starting character position in the original document (0-based)
+        end_offset: Ending character position in the original document (exclusive)
+
+    Example:
+        >>> chunk = TextChunk("Hello world", 0, 11)
+        >>> print(chunk.text)  # "Hello world"
+        >>> print(chunk.start_offset)  # 0
+        >>> print(chunk.end_offset)  # 11
+    """
+
+    text: str
+    start_offset: int
+    end_offset: int
+
+    def __post_init__(self):
+        """Validate TextChunk fields."""
+        if not isinstance(self.text, str):
+            raise ValueError("TextChunk.text must be a string")
+        if self.start_offset < 0:
+            raise ValueError("TextChunk.start_offset must be non-negative")
+        if self.end_offset < self.start_offset:
+            raise ValueError(
+                f"TextChunk.end_offset ({self.end_offset}) must be >= start_offset ({self.start_offset})"
+            )
+
+    @property
+    def length(self) -> int:
+        """Get the length of the chunk text."""
+        return len(self.text)
+
+    def to_str(self) -> str:
+        """
+        Get the text content (for backward compatibility).
+
+        Returns:
+            The text content of the chunk
+        """
+        return self.text
 
 
 class BaseSplitter(ABC):
@@ -49,19 +101,20 @@ class BaseSplitter(ABC):
         self,
         text: str,
         **kwargs
-    ) -> List[str]:
+    ) -> List[TextChunk]:
         """
-        Split text into smaller chunks.
+        Split text into smaller chunks with position information.
 
         This method should split the input text into semantically meaningful chunks
         while respecting the chunk_size and preserving context through overlap.
+        Each chunk includes precise start/end offsets in the original document.
 
         Args:
             text: Input text to split
             **kwargs: Additional provider-specific parameters
 
         Returns:
-            List of text chunks
+            List of TextChunk objects with text and position information
 
         Raises:
             RuntimeError: If the splitting operation fails
@@ -71,7 +124,9 @@ class BaseSplitter(ABC):
             >>> splitter = SplitterFactory.create(settings)
             >>> chunks = splitter.split_text("Long document text...")
             >>> print(len(chunks))  # Number of chunks
-            >>> print(len(chunks[0]))  # Size of first chunk
+            >>> print(chunks[0].text)  # Text content
+            >>> print(chunks[0].start_offset)  # Start position in document
+            >>> print(chunks[0].end_offset)  # End position in document
         """
         pass
 

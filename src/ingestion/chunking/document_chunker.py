@@ -18,10 +18,10 @@ License: MIT
 """
 
 import re
-from typing import List, Optional
+from typing import List
 
 from src.core.types import Chunk, Document
-from src.libs.splitter.base_splitter import BaseSplitter
+from src.libs.splitter.base_splitter import BaseSplitter, TextChunk
 from src.observability.logger import get_logger
 
 logger = get_logger(__name__)
@@ -34,8 +34,8 @@ class DocumentChunker:
     """
     Adapter layer for document chunking.
 
-    This class bridges the gap between libs.splitter (which only handles
-    text → List[str] splitting) and the Ingestion Pipeline (which needs
+    This class bridges the gap between libs.splitter (which now returns TextChunk
+    with precise position information) and the Ingestion Pipeline (which needs
     Document → List[Chunk] transformation with metadata inheritance).
 
     Responsibilities beyond libs.splitter:
@@ -44,7 +44,7 @@ class DocumentChunker:
     3. Add chunk_index field
     4. Establish source_ref to parent Document.id
     5. Image reference distribution (scan [IMAGE: {id}] placeholders)
-    6. Type conversion: List[str] → List[Chunk]
+    6. Type conversion: List[TextChunk] → List[Chunk]
 
     Example:
         >>> from src.libs.splitter import SplitterFactory
@@ -79,7 +79,7 @@ class DocumentChunker:
         Split a Document into a list of Chunks.
 
         This method performs the full adapter transformation:
-        1. Calls splitter.split_text() to get text chunks
+        1. Calls splitter.split_text() to get TextChunk objects with positions
         2. Generates Chunk IDs for each chunk
         3. Inherits metadata from Document
         4. Adds chunk_index and source_ref
@@ -108,7 +108,7 @@ class DocumentChunker:
             f"({len(document.text)} chars)"
         )
 
-        # Step 1: Split text into chunks
+        # Step 1: Split text into TextChunks with precise positions
         try:
             text_chunks = self.splitter.split_text(document.text)
         except Exception as e:
@@ -122,28 +122,27 @@ class DocumentChunker:
 
         self.logger.info(f"Split into {len(text_chunks)} text chunks")
 
-        # Step 2-6: Convert text chunks to Chunk objects
+        # Step 2-6: Convert TextChunks to Chunk objects
         chunks = []
-        for chunk_index, chunk_text in enumerate(text_chunks):
+        for chunk_index, text_chunk in enumerate(text_chunks):
             # Generate chunk ID
             chunk_id = self._generate_chunk_id(
-                document.id, chunk_index, chunk_text
+                document.id, chunk_index, text_chunk.text
             )
 
-            # Calculate offsets in original document text
-            start_offset, end_offset = self._find_chunk_offsets(
-                document.text, chunk_text, chunk_index
-            )
+            # Use precise positions from TextChunk
+            start_offset = text_chunk.start_offset
+            end_offset = text_chunk.end_offset
 
             # Inherit metadata and add chunk-specific fields
             chunk_metadata = self._inherit_metadata(
-                document, chunk_index, chunk_text
+                document, chunk_index, text_chunk.text
             )
 
             # Create Chunk object
             chunk = Chunk(
                 id=chunk_id,
-                text=chunk_text,
+                text=text_chunk.text,
                 metadata=chunk_metadata,
                 start_offset=start_offset,
                 end_offset=end_offset,
@@ -263,50 +262,3 @@ class DocumentChunker:
             image_refs.append({"id": image_id})
 
         return image_refs
-
-    def _find_chunk_offsets(
-        self,
-        document_text: str,
-        chunk_text: str,
-        chunk_index: int
-    ) -> tuple[int, int]:
-        """
-        Find the start and end offsets of a chunk in the document.
-
-        This is a heuristic that finds where the chunk text appears
-        in the original document. For the first chunk, start at 0.
-        For subsequent chunks, find the chunk text after the previous
-        chunk's end offset.
-
-        Args:
-            document_text: Full document text
-            chunk_text: Text of the chunk
-            chunk_index: Index of the chunk
-
-        Returns:
-            Tuple of (start_offset, end_offset)
-        """
-        # For first chunk, start at beginning
-        if chunk_index == 0:
-            start = 0
-            end = len(chunk_text)
-            return start, min(end, len(document_text))
-
-        # For subsequent chunks, find the chunk text in document
-        # Start searching from a reasonable position
-        # (This is a simplified heuristic; production may need more logic)
-        estimated_start = chunk_index * 1000  # Rough estimate
-        estimated_start = min(estimated_start, len(document_text))
-
-        # Try to find the chunk text starting from estimated position
-        pos = document_text.find(chunk_text, estimated_start - 500)
-
-        if pos >= 0:
-            start = pos
-            end = pos + len(chunk_text)
-        else:
-            # Fallback: use chunk text as-is at end of document
-            start = len(document_text) - len(chunk_text)
-            end = len(document_text)
-
-        return start, end
