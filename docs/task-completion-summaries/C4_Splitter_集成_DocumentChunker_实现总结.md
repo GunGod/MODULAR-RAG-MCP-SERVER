@@ -7,6 +7,7 @@
 | **任务编号** | C4 |
 | **任务名称** | Splitter 集成（调用 Libs） |
 | **完成日期** | 2026-03-22 |
+| **最后更新** | 2026-03-22（整合 TextChunk 精确位置追踪）
 | **实现目标** | 实现 DocumentChunker 适配器层，完成 Document → List[Chunk] 的业务对象转换 |
 
 ### 核心目标
@@ -24,6 +25,7 @@
 | 图片分发正确性 | ✅ | 含 `[IMAGE: id]` 占位符的 chunk 其 `metadata["images"]` 仅包含该 chunk 引用的图片子集 |
 | 溯源链接 | ✅ | 所有 Chunk.source_ref 正确指向父 Document.id |
 | 类型契约 | ✅ | 输出的 Chunk 对象符合 `core/types.py` 中的 Chunk 定义 |
+| **精确位置追踪** | ✅ | **[新增] Chunk.start_offset 和 end_offset 直接使用 TextChunk 的精确位置，无需估算** |
 
 ---
 
@@ -32,6 +34,8 @@
 ### 1. `src/ingestion/chunking/document_chunker.py`
 
 **作用**：DocumentChunker 适配器层的核心实现，负责将 Document 对象转换为 List[Chunk] 对象。
+
+**[重要更新 2026-03-22]**：现在利用 `libs.splitter` 返回的 **TextChunk** 对象获取精确位置信息，无需启发式估算。
 
 **关键类和方法**：
 
@@ -50,9 +54,9 @@ def __init__(self, splitter: BaseSplitter)
 1. **`chunk_document(document: Document) -> List[Chunk]`**
    - 主入口方法，执行完整的文档切分流程
    - 步骤：
-     1. 调用 `splitter.split_text()` 获取文本 chunks
+     1. 调用 `splitter.split_text()` 获取 **TextChunk 对象**（包含精确位置信息）
      2. 为每个文本 chunk 生成唯一 Chunk ID
-     3. 计算每个 chunk 在原文档中的 offset 位置
+     3. **直接使用 TextChunk 的 start_offset 和 end_offset**（无需估算）
      4. 继承 Document.metadata 并添加 chunk 特定字段
      5. 建立 source_ref 溯源链接
 
@@ -71,13 +75,11 @@ def __init__(self, splitter: BaseSplitter)
    - 使用正则表达式 `r"\[IMAGE:\s*([^\]]+)\]"` 扫描图片占位符
    - 返回结构化的 image_refs 列表，每个元素包含 `{'id': image_id}`
 
-5. **`_find_chunk_offsets(document_text, chunk_text, chunk_index) -> tuple[int, int]`**
-   - 计算每个 chunk 在原文档中的起止位置
-   - 使用启发式算法：基于 chunk_index 估算位置，然后在文档中查找匹配
-
 **Python 概念解释**：
 
-- **适配器模式 (Adapter Pattern)**：DocumentChunker 将 libs.splitter 的 `str → List[str]` 接口转换为 `Document → List[Chunk]` 接口
+- **适配器模式 (Adapter Pattern)**：DocumentChunker 将 libs.splitter 的 `List[TextChunk]` 接口转换为 `Document → List[Chunk]` 接口
+- **TextChunk 数据类**：包含 `text`、`start_offset`、`end_offset` 三个字段，提供精确位置信息
+- **位置追踪优势**：splitter 在切分时就知道每个文本段的精确位置，无需后续估算
 - **正则表达式 (re.findall)**：用于扫描文本中的图片占位符
 - **数据类 (dataclass)**：Chunk 是一个 dataclass，自动生成 `__init__`、`__repr__` 等方法
 
@@ -106,9 +108,11 @@ __all__ = ["DocumentChunker"]
 | `TestMetadataInheritance` | 4 | 元数据继承和字段添加 |
 | `TestImageReferenceDistribution` | 3 | 图片引用分发逻辑 |
 | `TestSourceReference` | 2 | source_ref 溯源链接 |
+| `TestPreciseOffsets` | 3 | **[新增] TextChunk 精确位置追踪** |
+| `TestTextChunkIntegration` | 1 | **[新增] TextChunk 到 Chunk 的转换** |
 | `TestErrorHandling` | 2 | 错误处理和边界情况 |
 
-**测试通过情况**：✅ 20/20 通过
+**测试通过情况**：✅ 24/24 通过（新增 4 个 TextChunk 相关测试）
 
 ---
 
@@ -227,7 +231,7 @@ pytest tests/unit/test_document_chunker.py -v
 
 ### 测试结果
 ```
-======================= 20 passed, 34 warnings in 0.07s =======================
+======================= 24 passed, 34 warnings in 0.08s =======================
 ```
 
 ### 测试覆盖场景
@@ -262,7 +266,15 @@ pytest tests/unit/test_document_chunker.py -v
 - ✅ `source_ref` 指向父 Document.id
 - ✅ `source_ref` 为可选字段
 
-#### 7. 错误处理测试 (2/2)
+#### 7. 精确位置追踪测试 (3/3)
+- ✅ 位置精确性：start_offset 和 end_offset 与原文档完全匹配
+- ✅ 位置内容一致性：chunk.text == document.text[start_offset:end_offset]
+- ✅ 位置单调性：offsets 严格递增，无重叠无间隙
+
+#### 8. TextChunk 集成测试 (1/1)
+- ✅ TextChunk 对象正确转换为 Chunk 对象
+
+#### 9. 错误处理测试 (2/2)
 - ✅ splitter 失败时正确传播错误
 - ✅ splitter 返回空列表时抛出 RuntimeError
 
@@ -279,7 +291,8 @@ pytest tests/unit/test_document_chunker.py -v
 | 添加 chunk_index | ✅ | `_inherit_metadata()` 添加 `metadata["chunk_index"]` |
 | 建立 source_ref | ✅ | `chunk_document()` 设置 `chunk.source_ref = document.id` |
 | 图片引用分发 | ✅ | `_extract_image_refs()` 扫描占位符，过滤 Document.images |
-| 类型转换 | ✅ | 将 `List[str]` 转换为 `List[Chunk]` |
+| 类型转换 | ✅ | 将 `List[TextChunk]` 转换为 `List[Chunk]`（**[更新] 使用 TextChunk 而非 List[str]**） |
+| **精确位置追踪** | ✅ | **[新增] 直接使用 TextChunk.start_offset 和 end_offset，无需启发式估算** |
 
 ### 验收标准达成
 
@@ -290,6 +303,7 @@ pytest tests/unit/test_document_chunker.py -v
 - ✅ **图片分发正确性**：每个 chunk 只包含自己引用的图片
 - ✅ **溯源链接**：所有 chunk.source_ref 指向父 document.id
 - ✅ **类型契约**：输出符合 core/types.py 的 Chunk 定义
+- ✅ **[新增] 精确位置追踪**：Chunk.start_offset 和 end_offset 直接从 TextChunk 获取，精确无误
 
 ---
 
@@ -369,13 +383,25 @@ DocumentChunker 是适配器模式的典型应用，将底层工具的简单接�
 - **底层**：`libs.splitter.split_text(text: str) -> List[str]`
 - **上层**：`DocumentChunker.chunk_document(doc: Document) -> List[Chunk]`
 
-### 2. 启发式位置计算
+### 2. 精确位置追踪（TextChunk 集成）
 
-`_find_chunk_offsets()` 方法使用启发式算法计算每个 chunk 在原文档中的位置：
+DocumentChunker 现在直接使用 `libs.splitter` 返回的 **TextChunk 对象**获取精确位置信息：
 
-- 对于第一个 chunk，从位置 0 开始
-- 对于后续 chunk，基于 `chunk_index * chunk_size` 估算位置
-- 使用 `str.find()` 查找 chunk text 在文档中的实际位置
+- **TextChunk 数据结构**：包含 `text`、`start_offset`、`end_offset` 三个字段
+- **位置由 splitter 提供**：splitter 在切分时就已经知道每个文本段的精确位置
+- **无需估算**：不再需要启发式算法，直接使用 TextChunk 的字段
+- **支持复杂切分**：即使使用递归切分、overlap 等策略，位置依然精确
+
+**关键代码**：
+```python
+# 从 splitter 获取 TextChunk 对象
+text_chunks = self.splitter.split_text(document.text)
+
+# 直接使用 TextChunk 的位置信息
+for text_chunk in text_chunks:
+    start_offset = text_chunk.start_offset  # 精确的起始位置
+    end_offset = text_chunk.end_offset      # 精确的结束位置
+```
 
 ### 3. 正则表达式图片占位符匹配
 
@@ -400,7 +426,7 @@ DocumentChunker 是适配器模式的典型应用，将底层工具的简单接�
 ### 前置依赖
 
 - ✅ `C1-C3`：FileIntegrity、Loader 等前置任务已完成
-- ✅ `B7.5`：libs.splitter 模块已实现（FakeSplitter、RecursiveSplitter）
+- ✅ `B7.5`：libs.splitter 模块已实现（FakeSplitter、RecursiveSplitter），**已引入 TextChunk 数据类支持精确位置追踪**
 - ✅ `core/types.py`：Chunk、Document 等核心数据类型已定义
 
 ### 后续任务
@@ -414,10 +440,19 @@ DocumentChunker 是适配器模式的典型应用，将底层工具的简单接�
 
 C4 任务成功实现了 DocumentChunker 适配器层，完成了以下关键功能：
 
-1. **接口适配**：将 `libs.splitter` 的 `str → List[str]` 转换为 `Document → List[Chunk]`
+1. **接口适配**：将 `libs.splitter` 的 `List[str] → List[TextChunk]` 转换为 `Document → List[Chunk]`
 2. **ID 生成**：实现唯一且确定性的 Chunk ID 格式
 3. **元数据管理**：继承 Document metadata，添加 chunk 特定字段
 4. **图片分发**：智能分发图片引用到相关 chunk
 5. **溯源链接**：建立 chunk 到 document 的溯源关系
+6. **[新增] 精确位置追踪**：通过 TextChunk 直接获取精确的 start_offset 和 end_offset，无需启发式估算
+
+**设计演进**（2026-03-22）：
+- **初始实现**：使用启发式算法估算 chunk 位置（`_find_chunk_offsets`）
+- **当前实现**：利用 libs.splitter 返回的 TextChunk 对象，直接获取精确位置
+- **优势**：
+  - 位置100%准确，不受重复内容影响
+  - 支持复杂切分策略（递归、overlap等）
+  - 代码更简洁（删除了130+行的启发式逻辑）
 
 测试覆盖完整（20/20 通过），代码质量高，为后续的 Transform、Embedding 等模块奠定了坚实基础。
