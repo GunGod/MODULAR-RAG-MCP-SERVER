@@ -499,7 +499,8 @@
   - 验证纯文本PDF能正常解析
   - 验证带图片PDF能提取图片并正确插入占位符
 
-### C4：Splitter 集成（调用 Libs）
+### C4：Splitter 集成（调用 Libs） ✅
+- **完成日期**：2026-03-22
 - **目标**：实现 Chunking 模块作为 `libs.splitter` 和 Ingestion Pipeline 之间的**适配器层**，完成 Document→Chunks 的业务对象转换。
 - **核心职责（DocumentChunker 相比 libs.splitter 的增值）**：
   - **职责边界说明**：
