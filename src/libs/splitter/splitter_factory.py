@@ -65,9 +65,8 @@ class SplitterFactory:
             >>> chunks = splitter.split_text("Long text...")
             >>> print(len(chunks))
         """
-        # For now, we'll use a default configuration since Settings doesn't have splitter config yet
-        # This will be updated when splitter configuration is added to Settings
-        provider = "fake"  # Default provider for now
+        # Read provider from settings
+        provider = settings.splitter.provider
 
         # Validate provider is supported
         if provider not in cls._providers:
@@ -81,11 +80,17 @@ class SplitterFactory:
         provider_class = cls._providers[provider]
 
         try:
-            # Create instance with default config
+            # Read configuration from settings.splitter
+            chunk_size = settings.splitter.chunk_size
+            chunk_overlap = settings.splitter.chunk_overlap
+            separators = settings.splitter.separators
+
+            # Create instance with config from settings
             splitter_instance = cls._create_provider_instance(
                 provider_class,
-                chunk_size=1000,
-                chunk_overlap=200
+                chunk_size=chunk_size,
+                chunk_overlap=chunk_overlap,
+                separators=separators
             )
             logger.info(f"Created splitter: {splitter_instance}")
             return splitter_instance
@@ -99,7 +104,8 @@ class SplitterFactory:
         cls,
         provider_class: type,
         chunk_size: int,
-        chunk_overlap: int
+        chunk_overlap: int,
+        separators: List[str] = None
     ) -> BaseSplitter:
         """
         Create an instance of a specific splitter provider.
@@ -111,6 +117,7 @@ class SplitterFactory:
             provider_class: The splitter class to instantiate
             chunk_size: Maximum chunk size
             chunk_overlap: Overlap between chunks
+            separators: Custom separators (optional, for RecursiveSplitter)
 
         Returns:
             Instantiated splitter provider
@@ -120,6 +127,14 @@ class SplitterFactory:
             "chunk_size": chunk_size,
             "chunk_overlap": chunk_overlap,
         }
+
+        # Add separators if provided and supported by the provider
+        if separators is not None:
+            # Check if provider supports separators parameter
+            import inspect
+            sig = inspect.signature(provider_class.__init__)
+            if "separators" in sig.parameters:
+                provider_kwargs["separators"] = separators
 
         # Create and return instance
         return provider_class(**provider_kwargs)

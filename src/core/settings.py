@@ -87,6 +87,20 @@ class RerankConfig:
 
 
 @dataclass
+class SplitterConfig:
+    """Text splitter configuration for document chunking."""
+    provider: str = "recursive"  # recursive | fake | semantic | fixed
+    chunk_size: int = 1000
+    chunk_overlap: int = 200
+    separators: Optional[list[str]] = None  # Custom separators (optional)
+
+    def __post_init__(self):
+        if self.separators is None:
+            # Default separators for RecursiveSplitter
+            self.separators = ["\n\n", "\n", " ", ""]
+
+
+@dataclass
 class EvaluationConfig:
     """Evaluation configuration."""
     backends: list[str] = None  # ["ragas", "custom"]
@@ -128,6 +142,7 @@ class Settings:
     vector_store: VectorStoreConfig
     retrieval: RetrievalConfig
     rerank: RerankConfig
+    splitter: SplitterConfig
     vision_llm: VisionLLMConfig
     evaluation: EvaluationConfig
     observability: ObservabilityConfig
@@ -229,6 +244,7 @@ def load_settings(path: str = "config/settings.yaml") -> Settings:
         vector_store_config = _parse_vector_store_config(config_data.get("vector_store", {}))
         retrieval_config = _parse_retrieval_config(config_data.get("retrieval", {}))
         rerank_config = _parse_rerank_config(config_data.get("rerank", {}))
+        splitter_config = _parse_splitter_config(config_data.get("splitter", {}))
         vision_llm_config = _parse_vision_llm_config(config_data.get("vision_llm", {}))
         evaluation_config = _parse_evaluation_config(config_data.get("evaluation", {}))
         observability_config = _parse_observability_config(config_data.get("observability", {}))
@@ -240,6 +256,7 @@ def load_settings(path: str = "config/settings.yaml") -> Settings:
             vector_store=vector_store_config,
             retrieval=retrieval_config,
             rerank=rerank_config,
+            splitter=splitter_config,
             vision_llm=vision_llm_config,
             evaluation=evaluation_config,
             observability=observability_config,
@@ -324,6 +341,16 @@ def _parse_rerank_config(data: dict[str, Any]) -> RerankConfig:
         model=data.get("model"),
         top_m=data.get("top_m", 30),
         timeout_seconds=data.get("timeout_seconds", 10),
+    )
+
+
+def _parse_splitter_config(data: dict[str, Any]) -> SplitterConfig:
+    """Parse Splitter configuration section."""
+    return SplitterConfig(
+        provider=data.get("provider", "recursive"),
+        chunk_size=data.get("chunk_size", 1000),
+        chunk_overlap=data.get("chunk_overlap", 200),
+        separators=data.get("separators"),
     )
 
 

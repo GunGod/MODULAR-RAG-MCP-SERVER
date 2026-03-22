@@ -83,6 +83,28 @@ rerank:
 
 
 # =============================================================================
+# Text Splitter Configuration
+# =============================================================================
+splitter:
+  # Provider: recursive | fake | semantic | fixed
+  provider: recursive
+
+  # Chunk size (maximum characters per chunk)
+  chunk_size: 1000
+
+  # Chunk overlap (characters shared between consecutive chunks)
+  chunk_overlap: 200
+
+  # Custom separators (optional, only for recursive splitter)
+  # If not specified, uses default: ["\n\n", "\n", " ", ""]
+  # separators:
+  #   - "\n\n"
+  #   - "\n"
+  #   - " "
+  #   - ""
+
+
+# =============================================================================
 # Vision LLM Configuration (Image Captioning)
 # =============================================================================
 vision_llm:
